@@ -11,26 +11,28 @@ function WebcamComponent() {
     return "https://labored-margeret-evincible.ngrok-free.dev/upload";
   };
 
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   const capture = async () => {
     if (!webcamRef.current) return;
 
-    // Small timeout to let mobile camera stabilize
-    setTimeout(async () => {
-      const imageSrc = webcamRef.current.getScreenshot();
-      if (!imageSrc) {
-        alert("Failed to capture image. Try again.");
-        return;
-      }
+    // Small delay to let mobile camera stabilize
+    await delay(100);
 
-      try {
-        const backendURL = getBackendURL();
-        const response = await axios.post(backendURL, { image: imageSrc });
-        alert(`Saved image as: ${response.data.file}`);
-      } catch (err) {
-        console.error("Error uploading image:", err);
-        alert("Failed to save image to backend.");
-      }
-    }, 100); // 100ms delay for mobile stabilization
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) {
+      alert("Failed to capture image. Try again.");
+      return;
+    }
+
+    try {
+      const backendURL = getBackendURL();
+      const response = await axios.post(backendURL, { image: imageSrc });
+      alert(`Saved image as: ${response.data.file}`);
+    } catch (err) {
+      console.error("Error uploading image:", err.response || err.message || err);
+      alert("Failed to save image to backend.");
+    }
   };
 
   return (
