@@ -7,6 +7,8 @@ function WebcamComponent() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [lastCapture, setLastCapture] = useState(null);
 
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   const capture = async () => {
     if (!webcamRef.current) {
       alert("Webcam not ready. Please allow camera access.");
