@@ -5,9 +5,8 @@ import Webcam from "react-webcam";
 function WebcamComponent() {
   const webcamRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [lastCapture, setLastCapture] = useState(null);
-
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  const [classification, setClassification] = useState(null);
+  const [specificClassification, setSpecificClassification] = useState(null);
 
   const capture = async () => {
     if (!webcamRef.current) {
@@ -24,27 +23,32 @@ function WebcamComponent() {
     setIsCapturing(true);
     
     try {
-      const response = await axios.post('/upload', { 
-        image: imageSrc 
+      const response = await axios.post('http://localhost:8000/classify/', { 
+        image: imageSrc  // Changed from image_path to image
       }, {
         timeout: 10000 // 10 second timeout
       });
       
-      console.log("✅ Image saved:", response.data);
-      setLastCapture(response.data.file);
+      console.log("✅ Classification result:", response.data);
       
-      alert(`✅ Image saved successfully!\nFilename: ${response.data.file}`);
+      if (response.data.success) {
+        setClassification(response.data.classification);
+        setSpecificClassification(response.data.specific_classification);
+        alert(`✅ Item classified as: ${response.data.classification.toUpperCase()}`);
+      } else {
+        alert(`❌ Classification failed: ${response.data.error}`);
+      }
       
     } catch (err) {
-      console.error("❌ Upload error:", err);
+      console.error("❌ Classification error:", err);
       
-      let errorMessage = "Failed to save image";
+      let errorMessage = "Failed to classify image";
       if (err.response?.data?.error) {
         errorMessage = err.response.data.error;
-      } else if (err.code === 'NETWORK_ERROR') {
-        errorMessage = "Network error. Check your connection.";
-      } else if (err.code === 'TIMEOUT') {
-        errorMessage = "Upload timeout. Server may be unavailable.";
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = "Request timeout. Server may be unavailable.";
+      } else if (err.message === 'Network Error') {
+        errorMessage = "Network error. Is the server running on port 8000?";
       }
       
       alert(`❌ ${errorMessage}`);
@@ -72,7 +76,7 @@ function WebcamComponent() {
         />
         {isCapturing && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-            <div className="text-white font-bold">Saving...</div>
+            <div className="text-white font-bold">Classifying...</div>
           </div>
         )}
       </div>
@@ -86,12 +90,18 @@ function WebcamComponent() {
             : 'bg-blue-600 hover:bg-blue-700'
         }`}
       >
-        {isCapturing ? 'Capturing...' : 'Capture Frame'}
+        {isCapturing ? 'Classifying...' : 'Capture & Classify'}
       </button>
 
-      {lastCapture && (
-        <div className="mt-2 text-sm text-green-600">
-          Last capture: {lastCapture}
+      {classification && (
+        <div className="mt-4 p-4 bg-green-100 rounded-lg">
+          <h3 className="font-bold text-lg">Classification Result:</h3>
+          <p className="text-2xl text-green-700 capitalize font-bold">{classification}</p>
+          {specificClassification && (
+            <p className="text-sm text-gray-600 mt-1">
+              Specific: {specificClassification.replace(/_/g, ' ')}
+            </p>
+          )}
         </div>
       )}
     </div>

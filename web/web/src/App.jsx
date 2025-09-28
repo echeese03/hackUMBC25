@@ -50,7 +50,7 @@ function App() {
       
       const testImage = canvas.toDataURL('image/jpeg');
       
-      const response = await fetch('/upload', {
+      const response = await fetch('/classify/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
