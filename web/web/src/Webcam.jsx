@@ -6,7 +6,7 @@ function WebcamComponent() {
   const webcamRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [classification, setClassification] = useState(null);
-  const [specificClassification, setSpecificClassification] = useState(null);
+  const [blurb, setBlurb] = useState(""); // State for the blurb
 
   const capture = async () => {
     if (!webcamRef.current) {
@@ -24,16 +24,18 @@ function WebcamComponent() {
     
     try {
       const response = await axios.post('http://localhost:8000/classify/', { 
-        image: imageSrc  // Changed from image_path to image
+        image: imageSrc
       }, {
-        timeout: 10000 // 10 second timeout
+        timeout: 20000 // 10 second timeout
       });
       
       console.log("✅ Classification result:", response.data);
       
       if (response.data.success) {
+        // Set the classification and blurb from response
         setClassification(response.data.classification);
-        setSpecificClassification(response.data.specific_classification);
+        setBlurb(response.data.blurb);
+        print(response.data.blurb);
         alert(`✅ Item classified as: ${response.data.classification.toUpperCase()}`);
       } else {
         alert(`❌ Classification failed: ${response.data.error}`);
@@ -92,14 +94,13 @@ function WebcamComponent() {
       >
         {isCapturing ? 'Classifying...' : 'Capture & Classify'}
       </button>
-
       {classification && (
         <div className="mt-4 p-4 bg-green-100 rounded-lg">
           <h3 className="font-bold text-lg">Classification Result:</h3>
           <p className="text-2xl text-green-700 capitalize font-bold">{classification}</p>
-          {specificClassification && (
+          {blurb && ( // Display the blurb if it's available
             <p className="text-sm text-gray-600 mt-1">
-              Specific: {specificClassification.replace(/_/g, ' ')}
+              Info: {blurb}
             </p>
           )}
         </div>

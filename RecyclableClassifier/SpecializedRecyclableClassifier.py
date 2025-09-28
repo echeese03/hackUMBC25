@@ -3,6 +3,7 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import torch
+import google.generativeai as genai
 from torch import nn
 from torchvision import transforms
 import torchvision.models as models
@@ -25,18 +26,20 @@ clothing_classes = ['clothing', 'shoes']
 food_waste_classes = ['coffee_grounds', 'eggshells', 'food_waste', 'tea_bags']
 glass_classes = ['glass_beverage_bottles', 'glass_cosmetic_containers', 'glass_food_jars']
 paper_classes = ['magazines', 'newspaper', 'office_paper', 'paper_cups']
-plastic_classes = ['plastic_cup_lids', 'plastic_detergent_bottles', 'plastic_food_containers', 'plastic_shopping_bags', 'plastic_soda_bottles', 'plastic_straws', 'plastic_trash_bags', 'plastic_water_bottles', 'disposable_plastic_cutlery']
+plastic_classes = ['plastic_cup_lids', 'plastic_detergent_bottles', 'plastic_food_containers', 
+                  'plastic_shopping_bags', 'plastic_soda_bottles', 'plastic_straws', 
+                  'plastic_trash_bags', 'plastic_water_bottles', 'disposable_plastic_cutlery']
 
+# Define a Custom ResNet18 Model
 class CustomResNet18(Module):
     def __init__(self):
         super().__init__()
         resnet_model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
-        resnet_model.fc = nn.Linear(resnet_model.fc.in_features, 30)
+        resnet_model.fc = nn.Linear(resnet_model.fc.in_features, 30)  # Change the output layer for 30 classes
         self.model = resnet_model
 
     def forward(self, image):
-        x = self.model(image)
-        return x
+        return self.model(image)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,6 +47,10 @@ async def lifespan(app: FastAPI):
     app.state.model = init_model()
     app.state.transform = init_transforms()
     app.state.classes = init_classes()
+
+    # Initialize the Gemini model here
+    genai.configure(api_key="AIzaSyAJJ1qALpHul7brqBaqQQXaeKSBnrcyRrI")  # Set your API key
+    app.state.gemini_model = genai.GenerativeModel("gemini-pro-latest")  # Initialize the Gemini model
 
     yield
 
@@ -76,7 +83,18 @@ def init_model():
     return model
 
 def init_classes():
-    classes = ['aerosol_cans', 'aluminum_food_cans', 'aluminum_soda_cans', 'cardboard_boxes', 'cardboard_packaging', 'clothing', 'coffee_grounds', 'disposable_plastic_cutlery', 'eggshells', 'food_waste', 'glass_beverage_bottles', 'glass_cosmetic_containers', 'glass_food_jars', 'magazines', 'newspaper', 'office_paper', 'paper_cups', 'plastic_cup_lids', 'plastic_detergent_bottles', 'plastic_food_containers', 'plastic_shopping_bags', 'plastic_soda_bottles', 'plastic_straws', 'plastic_trash_bags', 'plastic_water_bottles', 'shoes', 'steel_food_cans', 'styrofoam_cups', 'styrofoam_food_containers', 'tea_bags']
+    classes = [
+        'aerosol_cans', 'aluminum_food_cans', 'aluminum_soda_cans', 
+        'cardboard_boxes', 'cardboard_packaging', 'clothing', 
+        'coffee_grounds', 'disposable_plastic_cutlery', 'eggshells',
+        'food_waste', 'glass_beverage_bottles', 'glass_cosmetic_containers', 
+        'glass_food_jars', 'magazines', 'newspaper', 'office_paper', 
+        'paper_cups', 'plastic_cup_lids', 'plastic_detergent_bottles', 
+        'plastic_food_containers', 'plastic_shopping_bags', 
+        'plastic_soda_bottles', 'plastic_straws', 'plastic_trash_bags', 
+        'plastic_water_bottles', 'shoes', 'steel_food_cans', 
+        'styrofoam_cups', 'styrofoam_food_containers', 'tea_bags'
+    ]
     return classes
 
 # Updated model to accept base64 image
@@ -110,11 +128,15 @@ async def classify(image_data: ImageData):
         
         # Generalize classification
         generalized_classification = generalize_classification(classification)
-        
+
+        # Use the pre-initialized gemini model
+        response = app.state.gemini_model.generate_content(f"Write a fun fact about recycling {generalized_classification}.")
+
         return {
             "classification": generalized_classification,
+            "blurb": response.text,
             "specific_classification": classification,
-            "success": True
+            "success": True,
         }
         
     except Exception as e:
