@@ -1,0 +1,64 @@
+/* Full-screen body with centered content */
+body {
+  margin: 0;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center; /* horizontal centering */
+  align-items: center;     /* vertical centering */
+  background: linear-gradient(to bottom, #e0f7fa, #ffffff);
+  font-family: 'Arial', sans-serif;
+  text-align: center;
+}
+
+/* Container stacks everything vertically and centers it */
+.kiosk-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Video styling */
+#webcam {
+  width: 640px;
+  max-width: 90vw;
+  height: auto;
+  border: 4px solid #4CAF50;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  margin: 20px 0;
+}
+
+/* Button styling */
+button {
+  padding: 15px 30px;
+  font-size: 1.5em;
+  border-radius: 8px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  margin-bottom: 30px;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: #45a049;
+  transform: scale(1.05);
+}
+
+/* Bin label styling */
+#bin {
+  font-size: 2em;
+  margin: 15px 0;
+  color: #1b5e20;
+  font-weight: bold;
+}
+
+/* Fun fact styling */
+#fact {
+  font-size: 1.3em;
+  color: #333;
+  max-width: 700px;
+}

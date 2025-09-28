@@ -1,8 +1,5 @@
-// src/App.jsx
 import React from "react";
-import './App.css';
 import WebcamComponent from "./Webcam";
-// Optional: QR code to open on phone
 import QRCode from "react-qr-code";
 
 function App() {

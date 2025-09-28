@@ -5,35 +5,32 @@ import Webcam from "react-webcam";
 function WebcamComponent() {
   const webcamRef = useRef(null);
 
-  // Automatically determine backend URL
   const getBackendURL = () => {
-    // If running on localhost (laptop)
-    if (window.location.hostname === "localhost") {
-      return "http://localhost:3000/upload";
-    } else {
-      // Running on phone via ngrok or LAN
-      // Replace with your laptop's IP (or ngrok URL)
-      return "http://192.168.X.Y:3000/upload"; // <-- Replace X.Y with laptop IP
-    }
+    const hostname = window.location.hostname;
+    if (hostname === "localhost") return "http://localhost:3000/upload";
+    return "https://labored-margeret-evincible.ngrok-free.dev/upload";
   };
 
   const capture = async () => {
     if (!webcamRef.current) return;
 
-    const imageSrc = webcamRef.current.getScreenshot();
+    // Small timeout to let mobile camera stabilize
+    setTimeout(async () => {
+      const imageSrc = webcamRef.current.getScreenshot();
+      if (!imageSrc) {
+        alert("Failed to capture image. Try again.");
+        return;
+      }
 
-    if (!imageSrc) return alert("Failed to capture image.");
-
-    try {
-      const backendURL = getBackendURL();
-
-      const response = await axios.post(backendURL, { image: imageSrc });
-      console.log("Saved image to backend:", response.data);
-      alert(`Image saved: ${response.data.file}`);
-    } catch (err) {
-      console.error("Error uploading image:", err);
-      alert("Failed to save image to backend.");
-    }
+      try {
+        const backendURL = getBackendURL();
+        const response = await axios.post(backendURL, { image: imageSrc });
+        alert(`Saved image as: ${response.data.file}`);
+      } catch (err) {
+        console.error("Error uploading image:", err);
+        alert("Failed to save image to backend.");
+      }
+    }, 100); // 100ms delay for mobile stabilization
   };
 
   return (
