@@ -15,6 +15,15 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from torchvision.models import ResNet18_Weights
 
+styrofoam_classes = ['styrofoam_cups', 'styrofoam_food_containers']
+metal_classes = ['aerosol_cans', 'aluminum_food_cans', 'aluminum_soda_cans', 'steel_food_cans']
+cardboard_classes = ['cardboard_boxes', 'cardboard_packaging']
+clothing_classes = ['clothing', 'shoes']
+food_waste_classes = ['coffee_grounds', 'eggshells', 'food_waste', 'tea_bags']
+glass_classes = ['glass_beverage_bottles', 'glass_cosmetic_containers', 'glass_food_jars']
+paper_classes = ['magazines', 'newspaper', 'office_paper', 'paper_cups']
+plastic_classes = ['plastic_cup_lids', 'plastic_detergent_bottles', 'plastic_food_containers', 'plastic_shopping_bags', 'plastic_soda_bottles', 'plastic_straws', 'plastic_trash_bags', 'plastic_water_bottles', 'disposable_plastic_cutlery']
+
 class CustomResNet18(Module):
     def __init__(self):
         super().__init__()
@@ -29,9 +38,6 @@ class CustomResNet18(Module):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Initializing Specialized Recyclable Classifier Model")
-
-
-
     app.state.model = init_model()
     app.state.transform = init_transforms()
     app.state.classes = init_classes()
@@ -58,6 +64,8 @@ def init_model():
     return model
 
 def init_classes():
+
+
     classes = ['aerosol_cans', 'aluminum_food_cans', 'aluminum_soda_cans', 'cardboard_boxes', 'cardboard_packaging', 'clothing', 'coffee_grounds', 'disposable_plastic_cutlery', 'eggshells', 'food_waste', 'glass_beverage_bottles', 'glass_cosmetic_containers', 'glass_food_jars', 'magazines', 'newspaper', 'office_paper', 'paper_cups', 'plastic_cup_lids', 'plastic_detergent_bottles', 'plastic_food_containers', 'plastic_shopping_bags', 'plastic_soda_bottles', 'plastic_straws', 'plastic_trash_bags', 'plastic_water_bottles', 'shoes', 'steel_food_cans', 'styrofoam_cups', 'styrofoam_food_containers', 'tea_bags']
     return classes
 
@@ -66,18 +74,39 @@ class ImagePath(BaseModel):
 
 @app.post("/classify/")
 async def classify_image(image_path: ImagePath):
-    img = Image.open(image_path.image_path)
-    img_tf = app.state.transform(img)
-    img_output = app.state.model(img_tf.unsqueeze(0))
-    classification = app.state.classes[np.argmax(img_output.detach().numpy(), axis=1)[0]]
-    print(classification)
+    #img = Image.open(image_path.image_path)
+    #img_tf = app.state.transform(img)
+    #img_output = app.state.model(img_tf.unsqueeze(0))
+    #classification = app.state.classes[np.argmax(img_output.detach().numpy(), axis=1)[0]]
+    #print(classification)
+    #return classification
+    classification = classify_image(image_path.image_path, app.state.model, True)
     return classification
 
-def classify_image(image_path, model):
+
+def classify_image(image_path, model, generalize = False):
     img = Image.open(image_path)
     img_tf = init_transforms()(img)
     img_output = model(img_tf.unsqueeze(0))
-    return init_classes()[np.argmax(img_output.detach().numpy(), axis=1)[0]]
+    classification = init_classes()[np.argmax(img_output.detach().numpy(), axis=1)[0]]
+    if (generalize):
+        if classification in styrofoam_classes:
+            classification = "styrofoam"
+        elif classification in metal_classes:
+            classification = "metal"
+        elif classification in cardboard_classes:
+            classification = "cardboard"
+        elif classification in clothing_classes:
+            classification = "clothing"
+        elif classification in food_waste_classes:
+            classification = "food_waste"
+        elif classification in glass_classes:
+            classification = "glass"
+        elif classification in paper_classes:
+            classification = "paper"
+        elif classification in plastic_classes:
+            classification = "plastic"
+    return classification
 
 # Main function to run the script standalone
 if __name__ == '__main__':
